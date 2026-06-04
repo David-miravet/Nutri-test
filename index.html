@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA scan — Lee tu compra antes de comértela</title>
+<meta name="description" content="Sube la foto de tu ticket y entiende tu compra según la clasificación NOVA. Análisis nutricional honesto, sin moralina, con alternativas concretas.">
+<meta property="og:title" content="NOVA scan">
+<meta property="og:description" content="Lee tu compra antes de comértela. Análisis NOVA de tu ticket.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%235b8c5a'/%3E%3Ctext x='50' y='72' font-family='Georgia' font-size='62' font-weight='bold' fill='%23fff' text-anchor='middle'%3EN%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08090c;
+  --bg-2:#0d0f14;
+  --panel:#0f1218;
+  --panel-2:#13161e;
+  --line:rgba(255,255,255,.08);
+  --line-2:rgba(255,255,255,.13);
+  --txt:#e7e9ee;
+  --txt-dim:#9aa0ab;
+  --txt-faint:#5f6671;
+  --accent:#7ee08a;
+  --accent-2:#5b8c5a;
+  --fresco:#5fcf72;
+  --proc:#e0a94a;
+  --ultra:#e0594c;
+  --glow:0 0 0 1px rgba(255,255,255,.06),0 20px 60px -25px rgba(0,0,0,.9);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:'Inter Tight',sans-serif;line-height:1.55;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+::selection{background:var(--accent);color:#04140a}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+.serif{font-family:'Instrument Serif',serif;font-weight:400}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* aurora background */
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora::before,.aurora::after{
+  content:"";position:absolute;border-radius:50%;filter:blur(120px);opacity:.5;
+}
+.aurora::before{width:680px;height:680px;top:-280px;left:50%;transform:translateX(-50%);
+  background:radial-gradient(circle,rgba(126,224,138,.22),transparent 65%);}
+.aurora::after{width:520px;height:520px;bottom:-200px;right:-120px;
+  background:radial-gradient(circle,rgba(91,140,90,.18),transparent 65%);}
+.grid-lines{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:64px 64px;mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 30%,transparent 75%);opacity:.5}
+
+main{position:relative;z-index:1}
+
+/* nav */
+nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:rgba(8,9,12,.6);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.01em}
+.logo .mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#04140a;font-family:'Instrument Serif';font-size:19px;font-weight:bold}
+.navlinks{display:flex;gap:30px;font-size:14px;color:var(--txt-dim)}
+.navlinks a{transition:color .2s}.navlinks a:hover{color:var(--txt)}
+.navcta{font-size:13.5px;font-weight:500;padding:8px 16px;border-radius:9px;border:1px solid var(--line-2);transition:.2s}
+.navcta:hover{background:rgba(255,255,255,.05);border-color:var(--accent)}
+@media(max-width:760px){.navlinks{display:none}}
+
+/* hero */
+.hero{padding:96px 0 60px;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--txt-dim);
+  border:1px solid var(--line);border-radius:99px;padding:6px 14px;margin-bottom:30px;
+  background:rgba(255,255,255,.02)}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+h1.hero-t{font-size:clamp(40px,7.5vw,78px);line-height:.98;letter-spacing:-.035em;font-weight:600}
+h1.hero-t .em{font-family:'Instrument Serif';font-weight:400;font-style:italic;
+  background:linear-gradient(120deg,var(--accent),#cfeecf);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{max-width:560px;margin:26px auto 0;font-size:clamp(16px,2.2vw,19px);color:var(--txt-dim);line-height:1.6}
+.hero-cta{display:flex;gap:14px;justify-content:center;margin-top:38px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600;padding:13px 24px;border-radius:11px;transition:.2s;cursor:pointer;border:none;font-family:inherit}
+.btn-primary{background:linear-gradient(180deg,#9bf0a5,var(--accent));color:#04140a;box-shadow:0 8px 30px -8px rgba(126,224,138,.5)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 40px -10px rgba(126,224,138,.6)}
+.btn-ghost{background:rgba(255,255,255,.03);color:var(--txt);border:1px solid var(--line-2)}
+.btn-ghost:hover{background:rgba(255,255,255,.07);border-color:var(--accent)}
+
+/* hero mockup */
+.mockup{margin:64px auto 0;max-width:980px;perspective:2000px}
+.mockup-inner{border:1px solid var(--line-2);border-radius:18px;background:linear-gradient(180deg,var(--panel-2),var(--panel));box-shadow:var(--glow);overflow:hidden;transform:rotateX(4deg);transform-origin:center top}
+.mock-bar{display:flex;align-items:center;gap:7px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.mock-bar i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.mock-bar i:nth-child(1){background:#e0594c}.mock-bar i:nth-child(2){background:#e0a94a}.mock-bar i:nth-child(3){background:#5fcf72}
+.mock-bar span{margin-left:12px;font-size:12px;color:var(--txt-faint)}
+.mock-body{padding:26px;display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+@media(max-width:680px){.mock-body{grid-template-columns:1fr}}
+.mcard{background:var(--bg-2);border:1px solid var(--line);border-radius:13px;padding:18px}
+.mcard h5{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--txt-faint);margin-bottom:14px;font-weight:600}
+.kpi-row{display:flex;gap:22px;flex-wrap:wrap}
+.kpi b{font-family:'Instrument Serif';font-size:34px;font-weight:400;line-height:1;display:block}
+.kpi small{font-size:10.5px;color:var(--txt-faint);text-transform:uppercase;letter-spacing:.08em}
+.mbar{margin-top:16px}
+.mbar .r{display:flex;justify-content:space-between;font-size:12px;color:var(--txt-dim);margin-bottom:5px}
+.mtrack{height:8px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+.mfill{height:100%;border-radius:99px;width:0;transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.ring-box{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%}
+.ring{position:relative;width:120px;height:120px}
+.ring svg{transform:rotate(-90deg)}
+.ring .mid{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring .mid b{font-family:'Instrument Serif';font-size:30px;line-height:1}
+.ring .mid small{font-size:9.5px;color:var(--txt-faint);text-transform:uppercase;letter-spacing:.1em}
+.ring-cap{font-size:12.5px;color:var(--txt-dim);text-align:center;margin-top:14px;max-width:200px}
+
+/* logos / trust strip */
+.strip{padding:40px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:80px}
+.strip .wrap{display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat b{font-family:'Instrument Serif';font-size:38px;font-weight:400;display:block;line-height:1}
+.stat span{font-size:12.5px;color:var(--txt-dim)}
+
+/* sections */
+section.block{padding:100px 0}
+.sec-head{max-width:620px;margin-bottom:54px}
+.sec-tag{font-size:12.5px;color:var(--accent);font-weight:600;letter-spacing:.04em;margin-bottom:14px;font-family:'JetBrains Mono'}
+.sec-head h2{font-size:clamp(28px,4.5vw,44px);letter-spacing:-.03em;line-height:1.05;font-weight:600}
+.sec-head h2 .em{font-family:'Instrument Serif';font-style:italic;font-weight:400;color:var(--txt-dim)}
+.sec-head p{color:var(--txt-dim);font-size:17px;margin-top:18px;line-height:1.6}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+@media(max-width:820px){.steps{grid-template-columns:1fr}}
+.step{border:1px solid var(--line);border-radius:16px;padding:28px;background:linear-gradient(180deg,var(--panel),transparent);position:relative;transition:.3s}
+.step:hover{border-color:var(--line-2);transform:translateY(-4px)}
+.step .num{font-family:'JetBrains Mono';font-size:12px;color:var(--accent);margin-bottom:18px}
+.step .ic{font-size:26px;margin-bottom:14px}
+.step h3{font-size:20px;letter-spacing:-.01em;margin-bottom:8px;font-weight:600}
+.step p{color:var(--txt-dim);font-size:14.5px;line-height:1.6}
+
+/* feature split */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:54px;align-items:center}
+@media(max-width:820px){.split{grid-template-columns:1fr;gap:36px}}
+.feature-list{list-style:none;margin-top:14px}
+.feature-list li{display:flex;gap:14px;padding:18px 0;border-bottom:1px solid var(--line)}
+.feature-list li:last-child{border:0}
+.feature-list .fi{flex:none;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-size:16px;border:1px solid var(--line-2);background:rgba(255,255,255,.02)}
+.feature-list h4{font-size:16px;font-weight:600;margin-bottom:3px}
+.feature-list p{font-size:14px;color:var(--txt-dim);line-height:1.55}
+
+/* live table panel */
+.tpanel{border:1px solid var(--line-2);border-radius:18px;background:linear-gradient(180deg,var(--panel-2),var(--panel));box-shadow:var(--glow);overflow:hidden}
+.tpanel .head{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.tpanel .head b{font-size:15px;font-weight:600}
+.tpanel .head span{font-size:12px;color:var(--txt-faint);font-family:'JetBrains Mono'}
+.tscroll{max-height:430px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{position:sticky;top:0;background:var(--panel-2);text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--txt-faint);font-weight:600;padding:12px 22px;border-bottom:1px solid var(--line);z-index:1}
+tbody td{padding:12px 22px;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border:0}
+tbody tr{transition:background .15s}
+tbody tr:hover{background:rgba(255,255,255,.025)}
+.price{font-family:'JetBrains Mono';font-size:12.5px;white-space:nowrap}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.grey-tag{color:var(--txt-faint);font-style:italic;font-family:'Instrument Serif'}
+
+/* CTA */
+.cta{padding:110px 0;text-align:center}
+.cta-box{border:1px solid var(--line-2);border-radius:24px;padding:64px 30px;background:radial-gradient(ellipse 70% 120% at 50% 0%,rgba(126,224,138,.1),transparent 70%),linear-gradient(180deg,var(--panel),transparent);position:relative;overflow:hidden}
+.cta-box h2{font-size:clamp(30px,5vw,52px);letter-spacing:-.03em;line-height:1.02;font-weight:600}
+.cta-box h2 .em{font-family:'Instrument Serif';font-style:italic;font-weight:400;color:var(--accent)}
+.cta-box p{color:var(--txt-dim);max-width:440px;margin:20px auto 34px;font-size:17px}
+
+/* footer */
+footer{border-top:1px solid var(--line);padding:46px 0 60px}
+footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+footer .logo{font-size:15px}
+.foot-note{font-size:12.5px;color:var(--txt-faint);max-width:430px;line-height:1.55}
+.foot-links{display:flex;gap:22px;font-size:13.5px;color:var(--txt-dim)}
+.foot-links a:hover{color:var(--txt)}
+
+/* reveal on scroll */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px}
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+<div class="grid-lines"></div>
+
+<nav>
+  <div class="wrap">
+    <a href="#top" class="logo"><span class="mark">N</span> NOVA scan</a>
+    <div class="navlinks">
+      <a href="#problema">El problema</a>
+      <a href="#como">Cómo funciona</a>
+      <a href="#analisis">El análisis</a>
+    </div>
+    <a href="analizador.html" class="navcta">Probar el análisis</a>
+  </div>
+</nav>
+
+<main id="top">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow reveal"><span class="dot"></span> Clasificación NOVA · Prevención cardiovascular</div>
+      <h1 class="hero-t reveal">Lee tu compra<br><span class="em">antes de comértela.</span></h1>
+      <p class="lead reveal">Sube la foto del ticket del súper y obtén un análisis nutricional honesto de lo que llevas en el carro — qué mantener, qué cambiar y por qué. Sin moralina, con alternativas concretas.</p>
+      <div class="hero-cta reveal">
+        <a href="analizador.html" class="btn btn-primary">Analizar mi ticket →</a>
+        <a href="#analisis" class="btn btn-ghost">Ver un análisis real</a>
+      </div>
+
+      <!-- MOCKUP -->
+      <div class="mockup reveal">
+        <div class="mockup-inner">
+          <div class="mock-bar"><i></i><i></i><i></i><span class="mono">nova-scan · compra del 21/05</span></div>
+          <div class="mock-body">
+            <div class="mcard">
+              <h5>Resumen de la compra</h5>
+              <div class="kpi-row">
+                <div class="kpi"><b>60,90€</b><small>Total</small></div>
+                <div class="kpi"><b style="color:var(--fresco)">54,25€</b><small>En comida</small></div>
+                <div class="kpi"><b style="color:var(--txt-dim)">6,65€</b><small>Limpieza</small></div>
+              </div>
+              <div class="mbar"><div class="r"><span>Fresco</span><span>47%</span></div><div class="mtrack"><div class="mfill" data-w="47" style="background:var(--fresco)"></div></div></div>
+              <div class="mbar"><div class="r"><span>Mín. procesado</span><span>8%</span></div><div class="mtrack"><div class="mfill" data-w="8" style="background:#8db580"></div></div></div>
+              <div class="mbar"><div class="r"><span>Procesado</span><span>42%</span></div><div class="mtrack"><div class="mfill" data-w="42" style="background:var(--proc)"></div></div></div>
+              <div class="mbar"><div class="r"><span>Ultraprocesado</span><span>3%</span></div><div class="mtrack"><div class="mfill" data-w="3" style="background:var(--ultra)"></div></div></div>
+            </div>
+            <div class="mcard ring-box">
+              <div class="ring">
+                <svg width="120" height="120"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="11"/><circle id="heroRing" cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314" style="transition:stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1)"/></svg>
+                <div class="mid"><b>17:1</b><small>fresco:ultra</small></div>
+              </div>
+              <p class="ring-cap">Ratio excelente. El reto no es el ultraprocesado: es el peso de los embutidos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- TRUST STRIP -->
+  <div class="strip">
+    <div class="wrap">
+      <div class="stat reveal"><b>4</b><span>categorías NOVA</span></div>
+      <div class="stat reveal"><b>23</b><span>productos clasificados</span></div>
+      <div class="stat reveal"><b>17:1</b><span>ratio fresco / ultra</span></div>
+      <div class="stat reveal"><b>0€</b><span>de más para comer mejor</span></div>
+    </div>
+  </div>
+
+  <!-- PROBLEMA -->
+  <section class="block" id="problema">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-tag">// el problema</div>
+        <h2>No es lo que crees que está <span class="em">mal</span> en tu carro.</h2>
+        <p>La mayoría piensa que su enemigo es el ultraprocesado. Pero en una compra real el daño suele venir de lo que parece sano: fiambres "92% pechuga", conservas saladas, "integrales" que no lo son. NOVA scan lo separa producto a producto y te enseña dónde está de verdad el sodio, los nitritos y el azúcar añadido.</p>
+      </div>
+      <div class="split">
+        <ul class="feature-list reveal">
+          <li><span class="fi">🧂</span><div><h4>El sodio escondido</h4><p>El fiambre "92% pechuga" lleva el resto en sal, almidón y aditivos. Te lo marca, no lo asume sano.</p></div></li>
+          <li><span class="fi">🩸</span><div><h4>Carne procesada vs. carne</h4><p>Distingue el embutido curado de la pieza fresca y te dice qué cambiar sin perder proteína.</p></div></li>
+          <li><span class="fi">⚖️</span><div><h4>Zonas grises sin trampa</h4><p>El pan 100% integral o el chocolate 85% no son "malos". Se marcan como zona gris, no en blanco y negro.</p></div></li>
+        </ul>
+        <div class="tpanel reveal">
+          <div class="head"><b>Top a reducir</b><span class="mono">de tu compra real</span></div>
+          <div style="padding:6px 0">
+            <div style="padding:16px 22px;border-bottom:1px solid var(--line)"><div style="font-weight:600;margin-bottom:4px">Pechuga fiambre 92%</div><div style="font-size:13px;color:var(--txt-dim)">Sodio ~2,5 g/100g + nitritos · <span style="color:var(--accent)">→ pechuga fresca a la plancha</span></div></div>
+            <div style="padding:16px 22px;border-bottom:1px solid var(--line)"><div style="font-weight:600;margin-bottom:4px">Noodles instant</div><div style="font-size:13px;color:var(--txt-dim)">Único UPF + harina refinada · <span style="color:var(--accent)">→ arroz basmati + verdura</span></div></div>
+            <div style="padding:16px 22px"><div style="font-weight:600;margin-bottom:4px">Jamón serrano sobre</div><div style="font-size:13px;color:var(--txt-dim)">Sodio ~5 g/100g · <span style="color:var(--accent)">→ huevos camperos algún día</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMO FUNCIONA -->
+  <section class="block" id="como">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-tag">// cómo funciona</div>
+        <h2>Tres pasos. <span class="em">Treinta segundos.</span></h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal"><div class="num">01</div><div class="ic">📸</div><h3>Foto del ticket</h3><p>Arrastra una o varias fotos. Da igual si está arrugado o algo borroso: lo que no se lee se marca como ilegible y sigue.</p></div>
+        <div class="step reveal"><div class="num">02</div><div class="ic">🔬</div><h3>Clasificación NOVA</h3><p>Cada producto se etiqueta como fresco, mínimamente procesado, procesado o ultraprocesado. La limpieza se aparta del análisis.</p></div>
+        <div class="step reveal"><div class="num">03</div><div class="ic">🧭</div><h3>Plan accionable</h3><p>Ratio fresco/ultra, top a eliminar con alternativas concretas y la lista de la semana siguiente con tu mismo presupuesto.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANALISIS REAL (tabla viva) -->
+  <section class="block" id="analisis">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-tag">// el análisis</div>
+        <h2>Una compra real, <span class="em">diseccionada.</span></h2>
+        <p>Esto es el resultado sobre dos tickets de Mercadona. Cada fila clasificada, con el precio y la categoría NOVA. Pasa el ratón por encima.</p>
+      </div>
+      <div class="tpanel reveal">
+        <div class="head"><b>🛒 Detalle por producto</b><span class="mono">23 ítems · 60,90 €</span></div>
+        <div class="tscroll">
+          <table>
+            <thead><tr><th>Producto</th><th>Precio</th><th>Cant.</th><th>NOVA</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="cta">
+    <div class="wrap">
+      <div class="cta-box reveal">
+        <h2>Tu próxima compra,<br><span class="em">leída de verdad.</span></h2>
+        <p>Lleva el ticket de esta semana al analizador y empieza a poner en el carro lo que de verdad te conviene.</p>
+        <div class="hero-cta" style="margin-top:0">
+          <a href="analizador.html" class="btn btn-primary" id="appLink">Abrir el analizador →</a>
+          <a href="#top" class="btn btn-ghost">Volver arriba</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a href="#top" class="logo"><span class="mark">N</span> NOVA scan</a>
+      <p class="foot-note" style="margin-top:14px">Clasificación NOVA orientativa. Herramienta de decisión de compra, no una valoración profesional individualizada.</p>
+    </div>
+    <div class="foot-links">
+      <a href="#problema">Problema</a>
+      <a href="#como">Cómo funciona</a>
+      <a href="#analisis">Análisis</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ---- datos de la tabla ----
+const NOVA={
+  fresco:{label:'Fresco',soft:'rgba(95,207,114,.16)',ink:'#9be8a8'},
+  minimo:{label:'Mín. procesado',soft:'rgba(141,181,128,.16)',ink:'#bcd6ad'},
+  procesado:{label:'Procesado',soft:'rgba(224,169,74,.16)',ink:'#f0cd8a'},
+  ultra:{label:'Ultraprocesado',soft:'rgba(224,89,76,.16)',ink:'#f0a89f'},
+  noalim:{label:'No alimentario',soft:'rgba(255,255,255,.06)',ink:'#9aa0ab'},
+};
+const ITEMS=[
+  ['Lomo salmón noruego',6.35,'1','fresco',0],['Tomate cherry 500 g',2.00,'1','fresco',0],
+  ['Manzana roja acidulce bolsa',3.65,'1','fresco',0],['Patata freír 2 kg',3.90,'1','fresco',0],
+  ['Uva blanca sin semilla',3.55,'1','fresco',0],['Tomate natural rallado',1.45,'1','minimo',0],
+  ['Nuez troceada',1.80,'1','minimo',0],['Anacardo natural',2.70,'1','minimo',0],
+  ['Pan 100% integral',1.05,'1','procesado',1],['Porciones 85% cacao',3.50,'1','procesado',1],
+  ['Atún claro natural',4.20,'1','procesado',0],['Queso fresco desnatado',2.20,'2','procesado',0],
+  ['Jamón serrano sobre',3.95,'1','procesado',0],['Pechuga pollo fiambre 92%',2.85,'1','procesado',0],
+  ['Pechuga pavo fiambre 92%',2.85,'1','procesado',0],['Burrata (aprox.)',1.30,'1','procesado',0],
+  ['Noodles instant',1.45,'1','ultra',0],
+  ['Bebida pack 6×1,5 L',4.50,'1','noalim',0],['Gel WC c/ lejía',0.95,'1','noalim',0],
+  ['Limpiador con oxígeno',1.35,'1','noalim',0],['Multiusos perfumado',1.30,'1','noalim',0],
+  ['Limpiador WC polvo',1.80,'1','noalim',0],['Lavavajillas normal',1.25,'1','noalim',0],
+];
+document.getElementById('tbody').innerHTML=ITEMS.map(([name,price,qty,nova,grey])=>{
+  const n=NOVA[nova];
+  return `<tr><td>${name}${grey?' <span class="grey-tag">· zona gris</span>':''}</td>
+    <td class="price">${price.toFixed(2)} €</td><td>${qty}</td>
+    <td><span class="pill" style="background:${n.soft};color:${n.ink}">${n.label}</span></td></tr>`;
+}).join('');
+
+// ---- scroll reveal ----
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%4*60)+'ms';io.observe(el);});
+
+// ---- animate hero on load ----
+window.addEventListener('load',()=>{
+  setTimeout(()=>{
+    document.querySelectorAll('.mfill').forEach(f=>f.style.width=f.dataset.w+'%');
+    const r=document.getElementById('heroRing');
+    const frac=Math.min(17/20,1); r.style.strokeDashoffset=314*(1-frac);
+  },400);
+});
+
+// ---- parallax aurora (subtle) ----
+addEventListener('scroll',()=>{const y=scrollY;document.querySelector('.aurora').style.transform=`translateY(${y*.15}px)`;},{passive:true});
+</script>
+</body>
+</html>

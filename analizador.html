@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA scan · Análisis de tu compra</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,900;1,9..144,500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: { extend: {
+    fontFamily: { display: ['Fraunces','serif'], sans: ['Space Grotesk','sans-serif'] },
+    colors: {
+      bg:'#f4efe6', paper:'#fbf8f1', ink:'#1d1b16', muted:'#7a7264', line:'#e3dccd',
+      fresco:'#3f7d4e', minimo:'#8db580', proc:'#d99a3c', ultra:'#c5453a',
+    }
+  }}
+}
+</script>
+<style>
+  body{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, #fff7e9 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 110%, #e9f1e4 0%, transparent 50%),
+      #f4efe6;
+  }
+  .grain::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+  .fill-anim{transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+  .ring-anim{transition:stroke-dashoffset 1.3s cubic-bezier(.2,.8,.2,1)}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .spin{animation:sp 1s linear infinite}
+  @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .rise{animation:rise .6s ease}
+  .drop-over{border-color:#3f7d4e !important;background:rgba(63,125,78,.06)}
+</style>
+</head>
+<body class="grain font-sans text-ink min-h-screen">
+<div class="relative z-10 max-w-5xl mx-auto px-5 py-8 md:py-12">
+
+  <!-- ============ HEADER ============ -->
+  <header class="flex items-end justify-between gap-5 flex-wrap mb-8">
+    <div class="flex items-center gap-3.5">
+      <div class="w-13 h-13 md:w-14 md:h-14 rounded-2xl bg-ink text-paper grid place-items-center font-display font-black text-2xl shadow-2xl shadow-ink/30 -rotate-3" style="width:3.4rem;height:3.4rem">N</div>
+      <div>
+        <h1 class="font-display font-black text-3xl md:text-5xl leading-none tracking-tight">NOVA <em class="not-italic font-medium text-fresco italic">scan</em></h1>
+        <p class="text-muted text-sm mt-1.5 max-w-md leading-snug">Sube la foto de tu ticket y entiende tu compra según la clasificación NOVA — sin moralina, con alternativas concretas.</p>
+      </div>
+    </div>
+    <span class="text-[11px] tracking-[0.16em] uppercase text-muted border border-line px-3 py-1.5 rounded-full bg-paper">Nutrición · Prevención CV</span>
+  </header>
+
+  <a href="index.html" class="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink transition mb-5">← Volver a la página principal</a>
+
+  <!-- ============ SECCIÓN SUPERIOR: ANALIZADOR ============ -->
+  <section class="bg-paper border-[1.5px] border-line rounded-3xl shadow-2xl shadow-ink/20 overflow-hidden">
+    <div id="dropState">
+      <div id="drop" class="m-3.5 p-10 md:p-12 text-center cursor-pointer border-[2.5px] border-dashed border-line rounded-3xl transition">
+        <div class="text-4xl mb-2.5">🧾</div>
+        <h2 class="font-display font-semibold text-xl md:text-2xl mb-1.5">Arrastra tu ticket aquí</h2>
+        <p class="text-muted text-sm">JPG o PNG · puedes subir varios a la vez</p>
+        <button id="pick" type="button" class="mt-4 inline-flex items-center gap-2 bg-ink text-paper font-bold text-sm px-5 py-3 rounded-xl hover:-translate-y-0.5 transition">Elegir imagen</button>
+        <input id="file" type="file" accept="image/*" multiple hidden>
+      </div>
+      <div id="thumbs" class="flex gap-3 flex-wrap px-5 pb-1.5"></div>
+      <div id="actionbar" class="hidden items-center gap-3 justify-end px-5 pb-5 pt-3.5 flex-wrap">
+        <span id="hint" class="text-xs text-muted mr-auto"></span>
+        <button id="more" type="button" class="inline-flex items-center gap-2 border-[1.5px] border-line text-ink font-bold text-sm px-5 py-3 rounded-xl hover:-translate-y-0.5 transition">+ Añadir otro</button>
+        <button id="go" type="button" class="inline-flex items-center gap-2 bg-ink text-paper font-bold text-sm px-5 py-3 rounded-xl hover:-translate-y-0.5 transition">Analizar compra →</button>
+      </div>
+    </div>
+    <div id="loader" class="hidden p-10 text-center">
+      <div class="spin w-11 h-11 rounded-full border-4 border-fresco/30 border-t-fresco mx-auto mb-4"></div>
+      <p id="loadmsg" class="font-display italic text-lg">Leyendo tu ticket…</p>
+      <small class="text-muted block mt-1.5 text-xs">Clasificando cada producto según NOVA</small>
+    </div>
+    <div id="err" class="hidden m-3.5 p-4 rounded-xl bg-ultra/15 border-[1.5px] border-ultra text-[#7a241c] text-sm"></div>
+  </section>
+
+  <p class="text-center text-xs text-muted mt-3">¿Solo quieres ver cómo se ve? <button id="demoBtn" class="underline font-bold hover:text-ink">Carga el análisis de mi compra real →</button></p>
+
+  <!-- ============ SECCIÓN INFERIOR: TABLA NOVA + RATIOS ============ -->
+  <section id="results" class="hidden mt-8 rise"></section>
+
+  <p class="text-[11px] text-muted text-center mt-10 leading-relaxed max-w-xl mx-auto">Clasificación NOVA orientativa. Pensada como herramienta de decisión de compra, no como valoración profesional individualizada.</p>
+</div>
+
+<script>
+const NOVA = {
+  fresco:{label:'Fresco',color:'#3f7d4e',soft:'#cfe3d2',ink:'#28522f'},
+  minimo:{label:'Mín. procesado',color:'#8db580',soft:'#dfeed8',ink:'#3a5b2c'},
+  procesado:{label:'Procesado',color:'#d99a3c',soft:'#f3dcb4',ink:'#8a5a12'},
+  ultra:{label:'Ultraprocesado',color:'#c5453a',soft:'#f3cdc7',ink:'#8a241c'},
+  noalim:{label:'No alimentario',color:'#9c9484',soft:'#e6e1d6',ink:'#6c6457'},
+};
+const $=s=>document.querySelector(s);
+const files=[];
+
+// ---- Datos reales de tu compra (2 tickets Mercadona) como respaldo / demo ----
+const DEMO={
+  store:"Mercadona · 2 tickets",
+  items:[
+    {name:"Lomo salmón noruego",price:6.35,qty:"1",nova:"fresco",grey:false},
+    {name:"Tomate cherry 500 g",price:2.00,qty:"1",nova:"fresco",grey:false},
+    {name:"Tomate natural rallado",price:1.45,qty:"1",nova:"minimo",grey:false},
+    {name:"Nuez troceada",price:1.80,qty:"1",nova:"minimo",grey:false},
+    {name:"Burrata (aprox.)",price:1.30,qty:"1",nova:"procesado",grey:false},
+    {name:"Bebida pack 6×1,5 L",price:4.50,qty:"1",nova:"noalim",grey:false},
+    {name:"Gel WC c/ lejía",price:0.95,qty:"1",nova:"noalim",grey:false},
+    {name:"Limpiador con oxígeno",price:1.35,qty:"1",nova:"noalim",grey:false},
+    {name:"Multiusos perfumado",price:1.30,qty:"1",nova:"noalim",grey:false},
+    {name:"Limpiador WC polvo",price:1.80,qty:"1",nova:"noalim",grey:false},
+    {name:"Jamón serrano sobre",price:3.95,qty:"1",nova:"procesado",grey:false},
+    {name:"Pechuga pollo fiambre 92%",price:2.85,qty:"1",nova:"procesado",grey:false},
+    {name:"Pechuga pavo fiambre 92%",price:2.85,qty:"1",nova:"procesado",grey:false},
+    {name:"Pan 100% integral",price:1.05,qty:"1",nova:"procesado",grey:true},
+    {name:"Porciones 85% cacao",price:3.50,qty:"1",nova:"procesado",grey:true},
+    {name:"Manzana roja acidulce bolsa",price:3.65,qty:"1",nova:"fresco",grey:false},
+    {name:"Patata freír 2 kg",price:3.90,qty:"1",nova:"fresco",grey:false},
+    {name:"Atún claro natural",price:4.20,qty:"1",nova:"procesado",grey:false},
+    {name:"Queso fresco desnatado",price:2.20,qty:"2",nova:"procesado",grey:false},
+    {name:"Anacardo natural",price:2.70,qty:"1",nova:"minimo",grey:false},
+    {name:"Noodles instant",price:1.45,qty:"1",nova:"ultra",grey:false},
+    {name:"Uva blanca sin semilla",price:3.55,qty:"1",nova:"fresco",grey:false},
+    {name:"Lavavajillas normal",price:1.25,qty:"1",nova:"noalim",grey:false},
+  ],
+  summary:{total:60.90,food_total:54.25,nonfood_total:6.65,
+    pct:{fresco:47,minimo:8,procesado:42,ultra:3},ratio_text:"17:1",
+    verdict:"Compra muy sólida en fresco. Tu punto débil no es el ultraprocesado (apenas tienes) sino el peso de los embutidos y conservas saladas."},
+  remove:[
+    {name:"Pechuga pollo + pavo fiambre 92%",reason:"Son fiambres: el 92% es carne, el resto sal, almidón y aditivos (suelen llevar nitritos E-249/250 y fosfatos). Sodio ~2–2,5 g/100 g.",tags:["sodio alto","nitritos","carne procesada"],effect:"Bajas sodio y conservantes sin perder nada de proteína.",swap:"Pechuga de pollo fresca fileteada Hacendado (~5,90 €/kg) a la plancha."},
+    {name:"Noodles instant",reason:"Único ultraprocesado claro: harina refinada + sobre de sal/glutamato + aceite. Pico glucémico y mucho sodio.",tags:["UPF","sodio alto","harina refinada"],effect:"Eliminas tu único UPF y un chute de sal.",swap:"Arroz basmati o pasta integral Hacendado + verdura."},
+    {name:"Jamón serrano sobre",reason:"Carne curada: sodio muy alto (~5 g/100 g) y nitritos. Como capricho bien; como base semanal pesa.",tags:["sodio muy alto","nitritos"],effect:"Reducir frecuencia baja bastante tu carga total de sodio.",swap:"Un día huevos camperos Hacendado en vez de embutido."},
+  ],
+  smart:[
+    {name:"Lomo de salmón noruego",why:"Pescado fresco con omega-3 EPA/DHA, lo mejor del carro para prevención cardiovascular. Repítelo."},
+    {name:"Atún natural + frutos secos al natural",why:"Aunque el atún es 'procesado', al natural es proteína magra y barata. Con anacardo y nuez sin sal ni fritura, base de grasas y proteína de calidad."},
+  ],
+  next_week:{
+    keep:[{name:"Salmón noruego",price:6.35},{name:"Atún natural",price:4.20},{name:"Tomate cherry",price:2.00},{name:"Uva blanca",price:3.55},{name:"Patata 2 kg",price:3.90},{name:"Anacardo + nuez natural",price:4.50},{name:"Pan 100% integral",price:1.05},{name:"Chocolate 85%",price:3.50},{name:"Queso fresco desnatado",price:2.20}],
+    add:[{name:"Pechuga pollo fresca ~1 kg",price:6.00,reason:"sustituye los fiambres"},{name:"Huevos camperos docena",price:2.30,reason:"proteína desayuno/cena"},{name:"Brócoli o espinacas",price:2.50,reason:"falta verde por completo"},{name:"Legumbre bote",price:0.70,reason:"fibra barata"},{name:"Limón/cebolla/ajo",price:1.50,reason:"para cocinar el fresco"}],
+    est_total:46.00,
+    budget_note:"Por debajo de los 54,25 € en comida de esta compra."
+  }
+};
+
+// ---------- Upload ----------
+$('#pick').onclick=$('#more').onclick=()=>$('#file').click();
+$('#drop').onclick=e=>{if(['drop'].includes(e.target.id)||['DIV','H2','P'].includes(e.target.tagName))$('#file').click();};
+$('#file').onchange=e=>addFiles(e.target.files);
+const drop=$('#drop');
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drop-over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drop-over');}));
+drop.addEventListener('drop',e=>addFiles(e.dataTransfer.files));
+
+function resizeImage(file,maxW=1600){
+  return new Promise((resolve,reject)=>{
+    const img=new Image(),reader=new FileReader();
+    reader.onload=()=>img.src=reader.result; reader.onerror=reject;
+    img.onload=()=>{const s=Math.min(1,maxW/img.width),w=Math.round(img.width*s),h=Math.round(img.height*s);
+      const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+      const d=c.toDataURL('image/jpeg',.85);resolve({dataUrl:d,b64:d.split(',')[1],mime:'image/jpeg'});};
+    img.onerror=reject; reader.readAsDataURL(file);
+  });
+}
+async function addFiles(list){
+  const imgs=[...list].filter(f=>f.type.startsWith('image/'));
+  for(const f of imgs){try{files.push(await resizeImage(f));}catch(e){}}
+  $('#file').value=''; renderThumbs();
+}
+function renderThumbs(){
+  const t=$('#thumbs');t.innerHTML='';
+  files.forEach((f,i)=>{
+    const d=document.createElement('div');
+    d.className='relative w-20 h-26 rounded-xl overflow-hidden border-[1.5px] border-line shadow-lg';
+    d.style.height='6.5rem';
+    d.innerHTML=`<img src="${f.dataUrl}" class="w-full h-full object-cover"><button data-i="${i}" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-ink text-white text-xs grid place-items-center">×</button>`;
+    t.appendChild(d);
+  });
+  t.querySelectorAll('button').forEach(b=>b.onclick=()=>{files.splice(+b.dataset.i,1);renderThumbs();});
+  const ab=$('#actionbar');
+  ab.classList.toggle('hidden',!files.length); ab.classList.toggle('flex',!!files.length);
+  $('#hint').textContent=files.length?`${files.length} ticket${files.length>1?'s':''} listo${files.length>1?'s':''}`:'';
+}
+
+// ---------- Analyze ----------
+const MSGS=['Leyendo tu ticket…','Identificando productos…','Clasificando según NOVA…','Calculando ratios…','Buscando alternativas…'];
+let msgTimer;
+$('#go').onclick=analyze;
+$('#demoBtn').onclick=()=>render(DEMO);
+
+const PROMPT=`Eres un nutricionista clínico especializado en prevención cardiovascular. Analiza la(s) imagen(es) de ticket(s) aplicando la clasificación NOVA. Directo, sin moralina, adulto sano. Producto borroso => "[ilegible]". Limpieza/no alimentario => categoría "noalim", inclúyelo en items pero fuera del análisis nutricional.
+Devuelve SOLO JSON válido (sin markdown):
+{"store":"","items":[{"name":"","price":0.0,"qty":"1","nova":"fresco|minimo|procesado|ultra|noalim","grey":false}],"summary":{"total":0.0,"food_total":0.0,"nonfood_total":0.0,"pct":{"fresco":0,"minimo":0,"procesado":0,"ultra":0},"ratio_text":"17:1","verdict":""},"remove":[{"name":"","reason":"","tags":[""],"effect":"","swap":""}],"smart":[{"name":"","why":""}],"next_week":{"keep":[{"name":"","price":0.0}],"add":[{"name":"","price":0.0,"reason":""}],"est_total":0.0,"budget_note":""}}
+Reglas: remove 2-3, smart 2, pct suma ~100 (solo comida), grey:true en zona gris. Precios número en euros.`;
+
+async function analyze(){
+  $('#err').classList.add('hidden');
+  $('#dropState').classList.add('hidden'); $('#loader').classList.remove('hidden');
+  let mi=0; $('#loadmsg').textContent=MSGS[0];
+  msgTimer=setInterval(()=>{mi=(mi+1)%MSGS.length;$('#loadmsg').textContent=MSGS[mi];},1900);
+  const content=files.map(f=>({type:'image',source:{type:'base64',media_type:f.mime,data:f.b64}}));
+  content.push({type:'text',text:PROMPT});
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content}]})
+    });
+    const j=await res.json();
+    if(j.error) throw new Error(j.error.message||'API error');
+    let txt=j.content.filter(c=>c.type==='text').map(c=>c.text).join('\n').replace(/```json|```/g,'').trim();
+    render(JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1)));
+    resetUpload();
+  }catch(e){
+    const net=e.message==='Failed to fetch';
+    $('#err').innerHTML=(net
+      ? 'No se pudo conectar con el servicio de análisis desde el navegador (la API de Claude no es accesible directamente aquí). '
+      : 'Error: '+e.message+'. ')
+      +'<button id="fallbackDemo" class="underline font-bold">Ver el análisis de mi compra real →</button>';
+    $('#err').classList.remove('hidden');
+    $('#fallbackDemo').onclick=()=>{render(DEMO);resetUpload();};
+  }finally{
+    clearInterval(msgTimer);$('#loader').classList.add('hidden');$('#dropState').classList.remove('hidden');
+  }
+}
+function resetUpload(){files.length=0;renderThumbs();}
+
+// ---------- Render results ----------
+function ratioFrac(t){const m=(t||'').match(/([\d.]+)\s*:\s*([\d.]+)/);const r=m?(+m[1])/(+m[2]||1):5;return Math.min(r/20,1);}
+
+function render(d){
+  const C=2*Math.PI*50, off=C*(1-ratioFrac(d.summary.ratio_text));
+  const bar=k=>{const n=NOVA[k],v=d.summary.pct[k]||0;return `
+    <div class="mb-3.5">
+      <div class="flex justify-between text-[12.5px] mb-1"><span>${n.label}</span><b>${v}%</b></div>
+      <div class="h-2.5 rounded-full bg-line overflow-hidden"><div class="fill-anim h-full rounded-full" data-w="${v}" style="width:0;background:${n.color}"></div></div>
+    </div>`;};
+
+  const rows=d.items.map(i=>{const n=NOVA[i.nova]||NOVA.noalim;return `
+    <tr class="border-b border-line last:border-0">
+      <td class="py-2.5 px-2.5">${i.name}${i.grey?' <span class="font-display italic text-muted">· zona gris</span>':''}</td>
+      <td class="py-2.5 px-2.5 font-bold tabular-nums whitespace-nowrap">${i.price!=null?i.price.toFixed(2)+' €':'—'}</td>
+      <td class="py-2.5 px-2.5">${i.qty||'1'}</td>
+      <td class="py-2.5 px-2.5"><span class="inline-block text-[11px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap" style="background:${n.soft};color:${n.ink}">${n.label}</span></td>
+    </tr>`;}).join('');
+
+  const removeCards=d.remove.map(r=>`
+    <div class="border-[1.5px] border-line rounded-2xl p-4 bg-white border-l-[5px]" style="border-left-color:${NOVA.ultra.color}">
+      <h4 class="font-display font-semibold text-[17px] mb-1.5">${r.name}</h4>
+      <p class="text-[13px] text-muted leading-relaxed">${r.reason}</p>
+      <div class="flex gap-1.5 flex-wrap mt-2">${(r.tags||[]).map(t=>`<span class="text-[10.5px] font-bold px-2 py-0.5 rounded" style="background:${NOVA.ultra.soft};color:${NOVA.ultra.ink}">${t}</span>`).join('')}</div>
+      <p class="text-[13px] text-muted leading-relaxed mt-2"><b class="text-ink">Si lo quitas:</b> ${r.effect}</p>
+      <p class="text-[12.5px] mt-2 flex gap-1.5"><span class="text-fresco font-black">→</span><span>${r.swap}</span></p>
+    </div>`).join('');
+
+  const smartCards=d.smart.map(s=>`
+    <div class="border-[1.5px] border-line rounded-2xl p-4 bg-white border-l-[5px]" style="border-left-color:${NOVA.fresco.color}">
+      <h4 class="font-display font-semibold text-[17px] mb-1.5">✓ ${s.name}</h4>
+      <p class="text-[13px] text-muted leading-relaxed">${s.why}</p>
+    </div>`).join('');
+
+  const keep=d.next_week.keep.map(k=>`<div class="flex items-center gap-2.5 py-2 border-b border-dashed border-line last:border-0 text-[13.5px]"><span class="w-2 h-2 rounded-full" style="background:${NOVA.fresco.color}"></span>${k.name}<span class="ml-auto tabular-nums text-muted text-[12.5px]">${k.price!=null?k.price.toFixed(2)+' €':''}</span></div>`).join('');
+  const add=d.next_week.add.map(a=>`<div class="flex items-center gap-2.5 py-2 border-b border-dashed border-line last:border-0 text-[13.5px]"><span class="w-2 h-2 rounded-full flex-none" style="background:${NOVA.proc.color}"></span><span>${a.name}${a.reason?` <span class="text-muted text-xs">· ${a.reason}</span>`:''}</span><span class="ml-auto tabular-nums text-muted text-[12.5px]">${a.price!=null?a.price.toFixed(2)+' €':''}</span></div>`).join('');
+
+  $('#results').innerHTML=`
+  <div class="grid grid-cols-12 gap-4 md:gap-5">
+    <div class="col-span-12 md:col-span-7 bg-paper border-[1.5px] border-line rounded-3xl p-5 md:p-6 shadow-xl shadow-ink/10">
+      <h3 class="font-display font-semibold text-[13px] tracking-[0.12em] uppercase text-muted mb-4">📊 Resumen de la compra</h3>
+      <div class="flex gap-6 flex-wrap">
+        <div><div class="font-display font-black text-3xl md:text-4xl leading-none">${d.summary.total.toFixed(2)}€</div><div class="text-[11px] text-muted uppercase tracking-wider mt-1.5">Total${d.store?' · '+d.store:''}</div></div>
+        <div><div class="font-display font-black text-3xl md:text-4xl leading-none text-fresco">${d.summary.food_total.toFixed(2)}€</div><div class="text-[11px] text-muted uppercase tracking-wider mt-1.5">En comida</div></div>
+        <div><div class="font-display font-black text-3xl md:text-4xl leading-none text-muted">${(d.summary.nonfood_total||0).toFixed(2)}€</div><div class="text-[11px] text-muted uppercase tracking-wider mt-1.5">No alimentario</div></div>
+      </div>
+      <div class="mt-5">${bar('fresco')}${bar('minimo')}${bar('procesado')}${bar('ultra')}</div>
+    </div>
+
+    <div class="col-span-12 md:col-span-5 bg-paper border-[1.5px] border-line rounded-3xl p-5 md:p-6 shadow-xl shadow-ink/10">
+      <h3 class="font-display font-semibold text-[13px] tracking-[0.12em] uppercase text-muted mb-4">⚖️ Ratio fresco / ultra</h3>
+      <div class="flex items-center gap-5">
+        <div class="relative w-30 h-30 flex-none" style="width:7.5rem;height:7.5rem">
+          <svg width="120" height="120" style="transform:rotate(-90deg)">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#e3dccd" stroke-width="12"/>
+            <circle id="rcirc" cx="60" cy="60" r="50" fill="none" stroke="#3f7d4e" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}" class="ring-anim"/>
+          </svg>
+          <div class="absolute inset-0 grid place-content-center text-center">
+            <b class="font-display font-black text-2xl">${d.summary.ratio_text}</b>
+            <span class="text-[10px] text-muted uppercase tracking-wider">fresco:ultra</span>
+          </div>
+        </div>
+        <p class="text-[13.5px] leading-relaxed">${d.summary.verdict}</p>
+      </div>
+    </div>
+
+    <div class="col-span-12 bg-paper border-[1.5px] border-line rounded-3xl p-5 md:p-6 shadow-xl shadow-ink/10 overflow-x-auto">
+      <h3 class="font-display font-semibold text-[13px] tracking-[0.12em] uppercase text-muted mb-4">🛒 Detalle por producto · clasificación NOVA</h3>
+      <table class="w-full text-[13px] min-w-[480px]">
+        <thead><tr class="border-b-[1.5px] border-line">
+          <th class="text-left text-[10.5px] tracking-wider uppercase text-muted pb-2.5 px-2.5">Producto</th>
+          <th class="text-left text-[10.5px] tracking-wider uppercase text-muted pb-2.5 px-2.5">Precio</th>
+          <th class="text-left text-[10.5px] tracking-wider uppercase text-muted pb-2.5 px-2.5">Cant.</th>
+          <th class="text-left text-[10.5px] tracking-wider uppercase text-muted pb-2.5 px-2.5">NOVA</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="col-span-12 md:col-span-6 bg-paper border-[1.5px] border-line rounded-3xl p-5 md:p-6 shadow-xl shadow-ink/10">
+      <h3 class="font-display font-semibold text-[13px] tracking-[0.12em] uppercase text-muted mb-4">🚫 Top a eliminar o reducir</h3>
+      <div class="flex flex-col gap-3.5">${removeCards}</div>
+    </div>
+
+    <div class="col-span-12 md:col-span-6 bg-paper border-[1.5px] border-line rounded-3xl p-5 md:p-6 shadow-xl shadow-ink/10">
+      <h3 class="font-display font-semibold text-[13px] tracking-[0.12em] uppercase text-muted mb-4">⭐ Compras inteligentes</h3>
+      <div class="flex flex-col gap-3.5">${smartCards}</div>
+      <h3 class="font-display font-semibold text-[13px] tracking-[0.12em] uppercase text-muted mb-3 mt-6">🧭 Semana que viene</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div><h4 class="font-display text-base mb-2">✅ Mantener</h4>${keep}</div>
+        <div><h4 class="font-display text-base mb-2">➕ Añadir</h4>${add}</div>
+      </div>
+      <div class="mt-4 p-4 rounded-2xl bg-ink text-paper flex justify-between items-center flex-wrap gap-2">
+        <div><small class="opacity-70 text-[11px] uppercase tracking-wider">Estimado próxima compra</small><div class="font-display font-black text-2xl">${d.next_week.est_total.toFixed(2)} €</div></div>
+        <div class="text-right max-w-[220px] text-xs opacity-85">${d.next_week.budget_note}</div>
+      </div>
+    </div>
+  </div>
+  <div class="text-center mt-6"><button onclick="document.getElementById('results').classList.add('hidden');window.scrollTo({top:0,behavior:'smooth'})" class="inline-flex items-center gap-2 border-[1.5px] border-line text-ink font-bold text-sm px-5 py-3 rounded-xl hover:-translate-y-0.5 transition">↺ Analizar otro ticket</button></div>`;
+
+  const res=$('#results');
+  res.classList.remove('hidden');
+  res.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(()=>{
+    res.querySelectorAll('.fill-anim').forEach(f=>f.style.width=f.dataset.w+'%');
+    const rc=res.querySelector('#rcirc'); if(rc) rc.style.strokeDashoffset=off;
+  },150);
+}
+</script>
+</body>
+</html>
